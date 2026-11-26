@@ -1,0 +1,111 @@
+<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#7c6cf0"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Piano"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-192.png"><title>Il mio piano</title>
+<style>
+:root{--bg:#f6f5fb;--card:#fff;--tx:#1d1b2e;--mu:#767389;--ln:#e6e3f3;--ac:#7c6cf0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15141f;--card:#201f2e;--tx:#ecebf5;--mu:#9b98b0;--ln:#33314a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15141f;--card:#201f2e;--tx:#ecebf5;--mu:#9b98b0;--ln:#33314a;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif}
+#m{padding:12px 12px 90px;max-width:560px;margin:auto}
+h1{font-size:18px;margin:0;text-transform:capitalize}h2{font-size:15px;margin:16px 0 6px}small{color:var(--mu);display:block;font-size:12px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.top>div{text-align:center}
+button,input,select{font:inherit;color:var(--tx)}
+.top button,.chip,.btn{background:var(--card);border:1px solid var(--ln);border-radius:20px;padding:6px 12px;cursor:pointer}
+.btn{background:var(--ac);color:#fff;border:0}.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}.chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.r{display:flex;align-items:center;gap:10px;background:var(--card);border-left:5px solid var(--ln);border-radius:10px;padding:9px 10px;margin-bottom:6px}
+.r time{font-size:12px;color:var(--mu);width:84px;flex:none}.r span{flex:1}.r.dn span{text-decoration:line-through;opacity:.5}
+.r input[type=checkbox]{width:22px;height:22px;accent-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:10px;margin-bottom:8px}
+.card input,.card select{background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:6px;margin:2px 0;max-width:100%}
+.bar{height:8px;background:var(--ln);border-radius:4px;overflow:hidden;margin:3px 0 8px}.bar i{display:block;height:100%}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{flex:1;background:none;border:0;padding:8px 0;color:var(--mu);font-size:13px}nav button.on{color:var(--ac);font-weight:600}
+.g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:12px}.g div{padding:6px 0;border-radius:6px;cursor:pointer;background:var(--card)}.g .h{background:none;color:var(--mu);cursor:default}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;color:#fff;margin:1px}
+</style></head><body><div id="m"></div>
+<nav><button data-v="oggi" onclick="go('oggi')">Giorno</button><button data-v="sett" onclick="go('sett')">Settimana</button><button data-v="piano" onclick="go('piano')">Mesi</button><button data-v="imp" onclick="go('imp')">Impostazioni</button></nav>
+<script>
+const $=s=>document.querySelector(s),pad2=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()),pd=s=>new Date(s+'T12:00');
+const ad=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return iso(d)},df=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
+const f=m=>Math.floor(m/60)+':'+pad2(m%60),TODAY=iso(new Date());
+const S={stat:['Statistica','#e0568a'],prog:['Programmazione','#3b82f6'],analisi:['Analisi I','#f59e0b'],poo:['POO','#10b981'],altro:['Altro','#8b5cf6']};
+let st={done:{},late:{},off:{},rain:{},padel:{},custom:[],ld:8,ll:19,ex:{stat1:'2026-12-04',stat2:'2027-01-12',prog:'2027-01-26',poo:'2027-01-28',analisi:'2027-01-30',lab:''}};
+try{Object.assign(st,JSON.parse(localStorage.getItem('piano1')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('piano1',JSON.stringify(st))}catch(e){}};
+if(!st.seed1){st.seed1=1;st.padel['2026-11-26']=[[1140,1230]];st.padel['2026-11-27']=[[1080,1170]];save()}
+let V='oggi',cur=TODAY,wk=0;
+
+function build(){const U=[],E=st.ex;
+ const seq=(g,sub,items,a,b,e)=>{const n=items.reduce((s,i)=>s+i[1],0);let k=0;
+  items.forEach((it,i)=>{for(let j=0;j<it[1];j++){k++;U.push({id:g+i+'_'+j,g,sub,t:it[0]+(it[1]>1?` (${j+1}/${it[1]})`:''),e:e||a,d:ad(a,Math.round(df(a,b)*k/n))})}})};
+ seq('s1','stat',[['Teoria 2.3–2.4: v.c. discrete e continue',1],['Teoria 2.6: v.c. doppie',1],['Esercizi sez. B (v.c.)',1],['Teoria cap. 3: modelli discreti',1],['Teoria cap. 3: esponenziale, uniforme, normale',1],['Esercizi sez. C (modelli)',2],['Teoria cap. 4: statistiche campionarie e TLC',1],['Esercizi sez. D (campionarie)',1],['Rifare esercizi sez. A senza soluzioni',1],['Esercizi del prof 1–12',1],['Esercizi del prof 13–24',1],['Esercizi del prof 25–35',1],['Simulazione parziale + formule',1]],TODAY,ad(E.stat1,-1),TODAY);
+ seq('s2','stat',[['Creare la dispensa 2° parziale',3],['Studio argomenti 1–2',2],['Esercizi argomenti 1–2',2],['Studio argomenti 3–4',2],['Esercizi argomenti 3–4',2],['Studio argomenti 5–6',2],['Esercizi argomenti 5–6',2],['Ripasso generale',2],['Simulazione parziale',1],['Laboratorio R: ripasso comandi',2]],ad(E.stat1,1),ad(E.stat2,-2),ad(E.stat1,1));
+ const A=['Primo approccio: leggi una prova risolta, ripassa le basi'],P=[[['12/06/2023','AB'],['20/07/2023','AB'],['01/09/2023','A'],['22/09/2023','A']],[['19/06/2024','AB'],['22/07/2024','AB'],['02/09/2024','A'],['20/09/2024','A']],[['23/06/2025','AB'],['21/07/2025','AB'],['02/09/2025','A'],['22/09/2025','A']]],pr=[[A[0],1]];let c=0;
+ P.flat().forEach(([d,v])=>[...v].forEach(x=>{pr.push([`Prova ${d} ${x}: da sola, a tempo`,2],[`Correzione ${d} ${x}: capisci ogni passaggio`,1]);if(++c%3==0)pr.push(['Ripasso mirato sugli argomenti sbagliati',1])}));
+ seq('pr','prog',pr,ad(TODAY,1),ad(E.prog,-7),TODAY);
+ seq('an','analisi',[['Cap.1 Induzione: teoria',1],['Cap.1: esercizi',1],['Cap.2 Insiemi numerici: teoria',1],['Cap.2: esercizi',1],['Cap.3 Complessi: teoria',1],['Cap.3: esercizi',2],['Cap.4 Estremi sup/inf: teoria',1],['Cap.4: esercizi',2],['Cap.5 Serie: teoria',2],['Cap.5: esercizi',2],['Ripasso + simulazione esercizi',2]],ad(TODAY,3),ad(E.analisi,-4),TODAY);
+ let ds=[],d='2026-11-30';while(ds.length<30){const w=pd(d).getDay();if(w==1||w==3)ds.push(d);d=ad(d,1)}
+ for(let n=+st.ld+1;n<=+st.ll;n++){const dt=ds[n-14];U.push({id:'L'+n,g:'poL',sub:'poo',t:`Lezione ${n}: ppt + esercizi + ripasso AI`,e:n<=13?TODAY:ad(dt,1),d:n<=13?ad(TODAY,Math.round(9*(n-st.ld)/(14-st.ld))):ad(dt,4)})}
+ ['2026-11-25','2026-12-02','2026-12-09','2026-12-16'].forEach(w=>{for(let j=0;j<2;j++)U.push({id:'C'+w+j,g:'poC',sub:'poo',t:`Consegna POO (scade dom ${pd(ad(w,4)).toLocaleDateString('it-IT',{day:'numeric',month:'numeric'})} ore 24) (${j+1}/2)`,e:TODAY>w?TODAY:w,d:ad(w,3)})});
+ seq('pf','poo',[['Ripasso POO + esercizi',3]],ad(E.poo,-14),ad(E.poo,-3),ad(E.poo,-21));
+ st.custom.forEach(x=>{for(let j=0;j<x.dur;j++)U.push({id:x.id+'_'+j,g:x.id,sub:x.sub,t:x.t+(x.dur>1?` (${j+1}/${x.dur})`:''),e:TODAY,d:x.due})});
+ return U}
+
+function slotsFor(day){const w=pd(day).getDay(),md=day.slice(5),lez=w==1||w==3;let s;
+ if(lez)s=[[540,615],[870,975],[990,1080]];else if(w==6)s=[[690,780],[870,975],[990,1080]];else s=[[540,645],[660,765],[870,975],[990,1080]];
+ if(st.late[day]&&w!=6)s=lez?s.slice(1):[[600,705],...s.slice(2)];
+ if(!(st.padel[day]||[]).length&&w!=6&&!st.rain[day])s=s.filter(z=>z[0]<870).concat(st.gm=='cena'?[[975,1080]]:[[975,1080],[1095,1185]]);
+ if(['12-25','01-01'].includes(md)||st.off[day])s=[];else if(['12-24','12-26','12-31','01-06'].includes(md))s=s.slice(-2);
+ const pad=[];if(w==6)pad.push({a:570,b:660,x:-1});(st.padel[day]||[]).forEach((p,i)=>pad.push({a:p[0],b:p[1],x:i}));
+ s=s.filter(z=>!pad.some(p=>p.a<z[1]&&p.b>z[0]));return{S:s,pad,mov:!pad.length,lez}}
+
+function plan(){const U=build(),A={},gs={};
+ U.filter(u=>!(st.done[u.id]&&st.done[u.id]<TODAY)).forEach(u=>(gs[u.g]=gs[u.g]||[]).push(u));
+ for(let i=0;i<110;i++){const day=ad(TODAY,i);A[day]=[];slotsFor(day).S.forEach(()=>{let b=null;for(const g in gs){const h=gs[g][0];if(h&&h.e<=day&&(!b||h.d<b.d))b=h}
+  if(b)gs[b.g].shift();A[day].push(b)})}
+ return{U,A}}
+
+function blocks(day,A){const{S:sl,pad,mov,lez}=slotsFor(day),b=[];
+ if(lez)b.push({a:630,b:750,k:'lez',t:'Lezione POO',c:S.poo[1]});
+ pad.forEach(p=>b.push({a:p.a,b:p.b,k:'pad',t:'Padel'+(p.x<0?' (fisso)':' (extra)'),x:p.x,c:'#16a34a'}));
+ sl.forEach((s,i)=>b.push({a:s[0],b:s[1],k:'stu',u:(A[day]||[])[i]}));
+ if(mov)b.push(st.rain[day]?{a:1080,b:1140,k:'mov',id:'mov_'+day,t:'Allenamento a casa (1 ora)',c:'#0ea5e9'}:{a:900,b:960,k:'mov',id:'mov_'+day,t:'Camminata (1 ora)',c:'#0ea5e9'});
+ const gp=st.gm=='cena'&&!pad.some(p=>p.b>1140&&p.a<1200),ce=Math.max(1200,...pad.map(p=>p.b+15));b.push({a:765,b:gp?870:810,k:'x',t:'Pranzo'+(gp?' e pausa':'')},{a:ce,b:ce+60,k:'x',t:'Cena'},gp?{a:1140,b:1200,k:'game',id:'game_'+day,t:'Videogiochi (1 ora)',c:'#a855f7'}:{a:810,b:870,k:'game',id:'game_'+day,t:'Videogiochi (1 ora)',c:'#a855f7'});
+ return b.sort((x,y)=>x.a-y.a)}
+
+function row(b){const u=b.u,id=b.k=='stu'?u&&u.id:b.id,dn=id&&st.done[id];
+ const t=b.k=='stu'?(u?u.t:'Blocco libero: recupero o relax'):b.t,sub=u?S[u.sub][0]:'',c=u?S[u.sub][1]:(b.c||'var(--ln)');
+ return`<div class="r ${dn?'dn':''}" style="border-left-color:${c}"><time>${f(b.a)}–${f(b.b)}</time><span>${t}${sub?`<small>${sub}</small>`:''}</span>${b.k=='pad'&&b.x>=0?`<button class=chip onclick="dp(${b.x})">✕</button>`:''}${id?`<input type=checkbox ${dn?'checked':''} onchange="tk('${id}')">`:''}</div>`}
+
+function vDay(A){const d=cur,bl=blocks(d,A),n=bl.filter(x=>x.k=='stu'&&x.u).length;
+ const ch=(k,l)=>`<button class="chip ${st[k][d]?'on':''}" onclick="t2('${k}')">${l}</button>`;
+ return`<div class=top><button onclick="mv(-1)">‹</button><div><h1>${pd(d).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})}</h1><small>${n} blocchi di studio${d==TODAY?' · oggi':''}</small></div><button onclick="mv(1)">›</button></div>
+ <div class=chips>${ch('late','Sveglia tardi (10)')}${ch('rain','Pioggia')}${ch('off','Giorno libero')}</div>${bl.map(row).join('')}
+ <div class=card><b>Aggiungi padel</b><br><input type=time id=pt value="18:00"> <input type=number id=pm value=90 style="width:70px"> min <button class=btn onclick="ap()">Aggiungi</button><small>Il padel sostituisce la camminata e libera i blocchi che si sovrappongono: il piano si riorganizza da solo.</small></div>`}
+
+function vWeek(A){const t=pd(TODAY),mon=ad(TODAY,-((t.getDay()+6)%7)+7*wk);let h=`<div class=top><button onclick="wk--;R()">‹</button><div><h1>Settimana dal ${pd(mon).toLocaleDateString('it-IT',{day:'numeric',month:'short'})}</h1></div><button onclick="wk++;R()">›</button></div>`;
+ for(let i=0;i<7;i++){const d=ad(mon,i),sl=slotsFor(d);h+=`<div class=card onclick="cur='${d<TODAY?TODAY:d}';go('oggi')"><b style="text-transform:capitalize">${pd(d).toLocaleDateString('it-IT',{weekday:'short',day:'numeric'})}</b> ${sl.lez?'<span class=tag style="background:#10b981">lezione</span>':''}${sl.pad.map(()=>'<span class=tag style="background:#16a34a">padel</span>').join('')}<small>${d<TODAY?'passato':(A[d]||[]).map(u=>u?`<span class=tag style="background:${S[u.sub][1]}">${S[u.sub][0]}</span>`:'').join('')||'riposo'}</small></div>`}return h}
+
+function vPlan(A,U){let h='<h2>Esami e avanzamento</h2>';const ex=[['Parziale Statistica 1','stat1'],['Parziale Statistica 2','stat2'],['Programmazione','prog'],['POO','poo'],['Analisi I','analisi']];
+ h+=ex.map(([l,k])=>`<div class=card>${l}<small>${st.ex[k]?pd(st.ex[k]).toLocaleDateString('it-IT',{day:'numeric',month:'long'})+' · tra '+df(TODAY,st.ex[k])+' giorni':'data da definire'}</small></div>`).join('');
+ h+=Object.keys(S).map(k=>{const us=U.filter(u=>u.sub==k);if(!us.length)return'';const dn=us.filter(u=>st.done[u.id]).length;return`<div>${S[k][0]} <small style="display:inline">${dn}/${us.length} blocchi</small><div class=bar><i style="width:${100*dn/us.length}%;background:${S[k][1]}"></i></div></div>`}).join('');
+ const ed=Object.values(st.ex);const t=new Date();
+ for(let m=0;m<3;m++){const first=new Date(t.getFullYear(),t.getMonth()+m,1),y=first.getFullYear(),mo=first.getMonth(),nd=new Date(y,mo+1,0).getDate();
+  h+=`<h2 style="text-transform:capitalize">${first.toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</h2><div class=g>${'LMMGVSD'.split('').map(x=>`<div class=h>${x}</div>`).join('')}${'<div class=h></div>'.repeat((first.getDay()+6)%7)}`;
+  for(let d=1;d<=nd;d++){const dd=y+'-'+pad2(mo+1)+'-'+pad2(d),sl=slotsFor(dd),n=sl.S.length;h+=`<div style="${dd==TODAY?'outline:2px solid var(--ac);':''}background:color-mix(in srgb,var(--ac) ${n*9}%,var(--card))" onclick="cur='${dd<TODAY?TODAY:dd}';go('oggi')">${d}${ed.includes(dd)?'★':''}${sl.pad.length?'<br>🎾':''}</div>`}h+='</div>'}
+ return h+'<small>★ = esame o parziale · colore più scuro = più ore di studio</small>'}
+
+function vSet(){const inp=(l,k)=>`<label>${l}<br><input type=date value="${st.ex[k]}" onchange="st.ex['${k}']=this.value;save();R()"></label><br>`;
+ return`<h2>Date degli esami</h2><div class=card>${inp('Parziale Statistica 1','stat1')}${inp('Parziale Statistica 2','stat2')}${inp('Programmazione (da confermare)','prog')}${inp('POO (da confermare)','poo')}${inp('Analisi I (da confermare)','analisi')}${inp('Laboratorio R (quando esce la data)','lab')}<small>Quando cambi una data, il piano si ricalcola.</small></div>
+ <h2>Videogiochi</h2><div class=card><select onchange="st.gm=this.value;save();R()"><option value=pranzo>Dopo pranzo (13:30–14:30)</option><option value=cena ${st.gm=='cena'?'selected':''}>Prima di cena (19:00–20:00)</option></select></div><h2>POO</h2><div class=card>Ultima lezione studiata: <input type=number style="width:60px" value=${st.ld} onchange="st.ld=+this.value;save();R()"><br>Ultima lezione del corso: <input type=number style="width:60px" value=${st.ll} onchange="st.ll=+this.value;save();R()"></div>
+ <h2>Aggiungi un’attività</h2><div class=card><select id=cs>${Object.keys(S).map(k=>`<option value=${k}>${S[k][0]}</option>`).join('')}</select><br><input id=ct placeholder="Cosa devi fare"><br><input id=cn type=number value=1 style="width:60px"> blocchi, entro <input id=cd type=date><br><button class=btn onclick="ac()">Aggiungi</button>
+ ${st.custom.map((x,i)=>`<div class=r><span>${x.t}<small>entro ${x.due}</small></span><button class=chip onclick="st.custom.splice(${i},1);save();R()">✕</button></div>`).join('')}</div>
+ <div class=card><small>Per averla come app: apri questa pagina nel browser del telefono e scegli “Aggiungi a schermata Home”. I dati restano salvati sul dispositivo.</small><button class=chip onclick="st.done={};save();R()">Azzera tutte le spunte</button></div>`}
+
+function R(){const{U,A}=plan();$('#m').innerHTML={oggi:vDay,sett:vWeek,piano:vPlan,imp:vSet}[V](A,U);document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==V));scrollTo(0,0)}
+const go=v=>{V=v;R()},tk=id=>{st.done[id]?delete st.done[id]:st.done[id]=TODAY;save();const y=scrollY;R();scrollTo(0,y)};
+const mv=n=>{const d=ad(cur,n);if(d>=TODAY){cur=d;R()}},t2=k=>{st[k][cur]?delete st[k][cur]:st[k][cur]=1;save();R()};
+const ap=()=>{const[h,m]=$('#pt').value.split(':').map(Number),a=h*60+m,b=a+(+$('#pm').value||90);(st.padel[cur]=st.padel[cur]||[]).push([a,b]);save();R()},dp=i=>{st.padel[cur].splice(i,1);save();R()};
+const ac=()=>{const t=$('#ct').value.trim(),d=$('#cd').value;if(!t||!d)return;st.custom.push({id:'c'+Date.now(),sub:$('#cs').value,t,dur:+$('#cn').value||1,due:d});save();R()};
+R();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script></body></html>

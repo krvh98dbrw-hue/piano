@@ -1,0 +1,16 @@
+COME METTERE "IL MIO PIANO" SUL TELEFONO (gratis)
+
+1. Vai su github.com e crea un account gratuito (se non ce l'hai).
+2. In alto a destra: "+" > "New repository". Nome: piano  (tutto minuscolo). Lascia "Public". Crea.
+3. Nella pagina del repository clicca "uploading an existing file" e trascina TUTTI i file di questa cartella
+   (index.html, manifest.webmanifest, sw.js, icon-192.png, icon-512.png, apple-touch-icon.png).
+   In fondo clicca "Commit changes".
+4. Settings > Pages > "Build and deployment": Source = "Deploy from a branch",
+   Branch = main, cartella "/ (root)" > Save.
+5. Aspetta 1-2 minuti. In alto nella pagina Pages compare l'indirizzo:
+   https://TUO-NOME-UTENTE.github.io/piano/
+6. Sull'iPhone apri quell'indirizzo con SAFARI > tasto condividi > "Aggiungi alla schermata Home".
+   Su Android: Chrome > tre puntini > "Installa app".
+
+Per aggiornare il sito in futuro: nel repository clicca su index.html > matita > incolla il nuovo codice > Commit.
+Le spunte restano salvate sul telefono. Apri sempre l'app dall'icona sulla Home.
